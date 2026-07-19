@@ -1,0 +1,488 @@
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { AppMode, BriefData, NewsItem } from './types';
+import Header from './components/Header';
+import ConclusionSection from './components/ConclusionSection';
+import NewsGrid from './components/NewsGrid';
+import BriefBackground from './plugins/BriefBackground';
+
+const API_BASE_ENV = (import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '');
+const IS_NATIVE = Capacitor.isNativePlatform();
+const FIXED_MODE: AppMode = 'execution';
+const FIXED_LEVEL = '3_5';
+const SIGNAL_COUNT_OPTIONS = [10, 20, 30, 50, 100];
+const INITIAL_ITEM_COUNT = 100;
+const PREFETCH_ITEM_COUNT = 100;
+const AUTO_UPDATE_INTERVAL_MS = 30 * 60 * 1000;
+const DISPLAY_COUNT_LABEL = '\uD45C\uC2DC \uAC1C\uC218';
+const API_BASE_STORAGE_KEY = 'vcbrief.api_base';
+const SORT_MODE_STORAGE_KEY = 'vcbrief.sort_mode';
+const MIN_GLOBAL_RATIO = 1 / 3;
+
+type SortMode = 'importance' | 'time';
+
+function getTodayIsoDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function normalizeApiBase(value: string): string {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function getSavedSortMode(): SortMode {
+  if (typeof window === 'undefined') return 'importance';
+  const raw = String(window.localStorage.getItem(SORT_MODE_STORAGE_KEY) || '').trim().toLowerCase();
+  return raw === 'time' ? 'time' : 'importance';
+}
+
+function isLoopbackApiBase(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return ['localhost', '127.0.0.1', '::1'].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function getSavedApiBase(): string {
+  if (typeof window === 'undefined') return '';
+  return normalizeApiBase(window.localStorage.getItem(API_BASE_STORAGE_KEY) || '');
+}
+
+function getInitialApiBase(): string {
+  const saved = getSavedApiBase();
+  if (saved) return saved;
+  return normalizeApiBase(API_BASE_ENV);
+}
+
+function toUserFriendlyError(err: any, apiBase: string): string {
+  const fallback = '데이터를 불러오지 못했습니다.';
+  const raw = String(err?.message || '').trim();
+  const base = normalizeApiBase(apiBase);
+
+  if (/failed to fetch/i.test(raw) || /networkerror/i.test(raw)) {
+    if (!base) {
+      return 'API 주소가 비어 있습니다. 앱 설정에서 API Base URL을 입력해 주세요.';
+    }
+    if (IS_NATIVE && isLoopbackApiBase(base)) {
+      return '실기기에서는 localhost API를 사용할 수 없습니다. PC의 같은 Wi-Fi 대역 IP(예: http://192.168.x.x:3001)로 API Base URL을 설정해 주세요.';
+    }
+    return `네트워크 연결에 실패했습니다. API Base URL(${base})과 서버 상태를 확인해 주세요.`;
+  }
+
+  return raw || fallback;
+}
+
+function normalizeRegion(value: string | undefined): 'domestic' | 'global' {
+  return String(value || '').trim().toLowerCase() === 'global' ? 'global' : 'domestic';
+}
+
+function publishedAtMs(value: string | undefined): number {
+  const t = Date.parse(String(value || ''));
+  return Number.isFinite(t) ? t : 0;
+}
+
+function sortForMode(items: NewsItem[], sortMode: SortMode): NewsItem[] {
+  if (sortMode === 'time') {
+    return [...items].sort((a, b) => {
+      const dt = publishedAtMs(b.published_at) - publishedAtMs(a.published_at);
+      if (dt) return dt;
+      return b.score_total - a.score_total;
+    });
+  }
+
+  return [...items].sort((a, b) => {
+    const ds = b.score_total - a.score_total;
+    if (ds) return ds;
+    return publishedAtMs(b.published_at) - publishedAtMs(a.published_at);
+  });
+}
+
+function selectWithGlobalQuota(items: NewsItem[], count: number, sortMode: SortMode): NewsItem[] {
+  const sorted = sortForMode(items, sortMode);
+  const initial = sorted.slice(0, count);
+  if (initial.length <= 1) return initial;
+
+  const requiredGlobal = Math.ceil(initial.length * MIN_GLOBAL_RATIO);
+  if (requiredGlobal <= 0) return initial;
+
+  let globalCount = initial.filter((item) => normalizeRegion(item.region) === 'global').length;
+  if (globalCount >= requiredGlobal) return initial;
+
+  const selectedIds = new Set(initial.map((item) => item.id));
+  const reserveGlobal = sorted.filter(
+    (item) => !selectedIds.has(item.id) && normalizeRegion(item.region) === 'global'
+  );
+  if (!reserveGlobal.length) return initial;
+
+  const selected = [...initial];
+  const replaceCandidates =
+    sortMode === 'time'
+      ? selected
+          .map((item, idx) => ({ item, idx }))
+          .filter(({ item }) => normalizeRegion(item.region) !== 'global')
+          .sort((a, b) => {
+            const dt = publishedAtMs(a.item.published_at) - publishedAtMs(b.item.published_at);
+            if (dt) return dt;
+            return a.item.score_total - b.item.score_total;
+          })
+      : selected
+          .map((item, idx) => ({ item, idx }))
+          .filter(({ item }) => normalizeRegion(item.region) !== 'global')
+          .sort((a, b) => {
+            const ds = a.item.score_total - b.item.score_total;
+            if (ds) return ds;
+            return publishedAtMs(a.item.published_at) - publishedAtMs(b.item.published_at);
+          });
+
+  let reserveIdx = 0;
+  for (const candidate of replaceCandidates) {
+    if (globalCount >= requiredGlobal) break;
+    if (reserveIdx >= reserveGlobal.length) break;
+    selected[candidate.idx] = reserveGlobal[reserveIdx];
+    reserveIdx += 1;
+    globalCount += 1;
+  }
+
+  return sortForMode(selected, sortMode);
+}
+
+function normalizeBrief(data: any): BriefData {
+  return {
+    date: data?.date || new Date().toISOString().split('T')[0],
+    mode: data?.mode === 'decision' ? 'decision' : 'execution',
+    level: data?.level === '5_10' ? '5-10y' : data?.level === '3_5' ? '3-5y' : (data?.level || '3-5y'),
+    takeaways_3: Array.isArray(data?.takeaways_3) ? data.takeaways_3 : [],
+    items: Array.isArray(data?.items) ? data.items : [],
+    top5_summary: Array.isArray(data?.top5_summary) ? data.top5_summary : [],
+    checklist_5: Array.isArray(data?.checklist_5) ? data.checklist_5 : [],
+  };
+}
+
+const App: React.FC = () => {
+  const [data, setData] = useState<BriefData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [visibleItemCount, setVisibleItemCount] = useState<number>(20);
+  const [updatingCount, setUpdatingCount] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>(() => getSavedSortMode());
+  const [apiBase, setApiBase] = useState<string>(() => getInitialApiBase());
+  const [apiBaseDraft, setApiBaseDraft] = useState<string>(() => getInitialApiBase());
+  const hasDataRef = useRef(false);
+  const lastFetchAtRef = useRef<number>(0);
+
+  const setSortModePersist = (next: SortMode) => {
+    setSortMode(next);
+    try {
+      window.localStorage.setItem(SORT_MODE_STORAGE_KEY, next);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (data) hasDataRef.current = true;
+  }, [data]);
+
+  useEffect(() => {
+    if (!IS_NATIVE) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cache = await BriefBackground.getCache();
+        if (cancelled) return;
+        const raw = String(cache?.json || '').trim();
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const next = normalizeBrief(parsed);
+        lastFetchAtRef.current = Number(cache?.cachedAtMs || 0) || 0;
+        setData(next);
+        setLoading(false);
+      } catch {
+        // Ignore cache errors and proceed with network fetch.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!IS_NATIVE) return;
+    BriefBackground.configure({ apiBase, enabled: true }).catch(() => {
+      // Best-effort background scheduling; app still works without it.
+    });
+  }, [apiBase]);
+
+  const fetchBrief = async (itemCount: number) => {
+    const date = getTodayIsoDate();
+    if (IS_NATIVE && !apiBase) {
+      throw new Error('앱 설정에서 API Base URL을 입력해 주세요.');
+    }
+    if (IS_NATIVE && isLoopbackApiBase(apiBase)) {
+      throw new Error('실기기에서는 localhost API를 사용할 수 없습니다. API Base URL을 PC의 로컬 IP로 변경해 주세요.');
+    }
+    const res = await fetch(
+      `${apiBase}/api/brief?date=${date}&mode=${FIXED_MODE}&level=${FIXED_LEVEL}&itemCount=${itemCount}`,
+      { cache: 'no-store' }
+    );
+    if (!res.ok) {
+      throw new Error('데이터를 불러오지 못했습니다.');
+    }
+    const json = await res.json();
+    return normalizeBrief(json);
+  };
+
+  const ensureItemsForCount = async (targetCount: number) => {
+    if (updatingCount) return;
+    setUpdatingCount(true);
+    try {
+      const next = await fetchBrief(targetCount);
+      lastFetchAtRef.current = Date.now();
+      setData((prev) => {
+        if (!prev) return next;
+        return next.items.length >= prev.items.length ? next : prev;
+      });
+    } catch {
+      // Keep current data and let the user continue.
+    } finally {
+      setUpdatingCount(false);
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+
+    const fetchData = async () => {
+      if (!hasDataRef.current) setLoading(true);
+      setError(null);
+      try {
+        const initial = await fetchBrief(INITIAL_ITEM_COUNT);
+        if (!alive) return;
+        lastFetchAtRef.current = Date.now();
+        setData(initial);
+        setLoading(false);
+
+        const refreshBody = {
+          date: getTodayIsoDate(),
+          mode: FIXED_MODE,
+          level: FIXED_LEVEL,
+          itemCount: PREFETCH_ITEM_COUNT,
+        };
+
+        fetch(`${apiBase}/api/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(refreshBody),
+          })
+          .then(async () => {
+            const next = await fetchBrief(PREFETCH_ITEM_COUNT);
+            if (!alive) return;
+            lastFetchAtRef.current = Date.now();
+            setData((prev) => {
+              if (!prev) return next;
+              return next.items.length >= prev.items.length ? next : prev;
+            });
+          })
+          .catch(() => {
+            // Keep initial data if refresh fails.
+          });
+      } catch (err: any) {
+        if (!alive) return;
+        setError(toUserFriendlyError(err, apiBase));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => {
+      alive = false;
+    };
+  }, [apiBase]);
+
+  useEffect(() => {
+    const timerId = window.setInterval(async () => {
+      try {
+        const next = await fetchBrief(PREFETCH_ITEM_COUNT);
+        lastFetchAtRef.current = Date.now();
+
+        setData((prev) => {
+          if (!prev) return next;
+          return next.items.length >= prev.items.length ? next : prev;
+        });
+      } catch {
+        // Ignore transient polling failures and keep current data.
+      }
+    }, AUTO_UPDATE_INTERVAL_MS);
+
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const last = lastFetchAtRef.current || 0;
+      const overdue = Date.now() - last >= AUTO_UPDATE_INTERVAL_MS;
+      if (!overdue) return;
+      try {
+        const next = await fetchBrief(PREFETCH_ITEM_COUNT);
+        lastFetchAtRef.current = Date.now();
+        setData((prev) => {
+          if (!prev) return next;
+          return next.items.length >= prev.items.length ? next : prev;
+        });
+      } catch {
+        // Ignore resume refresh failures.
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+
+    return () => {
+      window.clearInterval(timerId);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [apiBase]);
+
+  const sortedNews = useMemo(() => {
+    if (!data) return [] as NewsItem[];
+    return selectWithGlobalQuota(data.items, visibleItemCount, sortMode);
+  }, [data, visibleItemCount, sortMode]);
+
+  const naiveTopIds = useMemo(() => {
+    if (!data) return new Set<string>();
+    const sorted = sortForMode(data.items || [], sortMode);
+    return new Set(sorted.slice(0, visibleItemCount).map((item) => item.id));
+  }, [data, visibleItemCount, sortMode]);
+
+  const quotaAddedIds = useMemo(() => {
+    const out = new Set<string>();
+    for (const item of sortedNews) {
+      if (!naiveTopIds.has(item.id)) out.add(item.id);
+    }
+    return out;
+  }, [sortedNews, naiveTopIds]);
+
+  const globalCountVisible = useMemo(
+    () => sortedNews.filter((item) => String(item?.region || '').toLowerCase() === 'global').length,
+    [sortedNews]
+  );
+  const requiredGlobalVisible = useMemo(
+    () => Math.ceil(visibleItemCount * MIN_GLOBAL_RATIO),
+    [visibleItemCount]
+  );
+
+  const topItems = useMemo(() => sortedNews.slice(0, 3), [sortedNews]);
+
+  if (loading) {
+    return (
+      <div className="terminal-screen terminal-centered">
+        <div className="loading-line">데이터를 정규화하는 중입니다...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="terminal-screen terminal-centered">
+        <div className="error-box">
+          <h2>오류</h2>
+          <p>{error}</p>
+          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+            현재 API Base URL: <code>{apiBase || '(미설정)'}</code>
+          </p>
+          <div style={{ marginTop: '0.75rem', display: 'grid', gap: '0.5rem' }}>
+            <input
+              type="url"
+              placeholder="https://api.example.com 또는 http://192.168.x.x:3001"
+              value={apiBaseDraft}
+              onChange={(e) => setApiBaseDraft(e.target.value)}
+              style={{ padding: '0.55rem 0.7rem' }}
+            />
+            <button
+              onClick={() => {
+                const next = normalizeApiBase(apiBaseDraft);
+                window.localStorage.setItem(API_BASE_STORAGE_KEY, next);
+                setApiBase(next);
+                setError(null);
+                setLoading(true);
+              }}
+            >
+              API 주소 저장 후 다시 시도
+            </button>
+          </div>
+          <button onClick={() => window.location.reload()}>다시 시도</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return (
+    <div className="terminal-screen pb-10">
+      <Header />
+
+      <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <section className="xl:col-span-12 space-y-6">
+            <ConclusionSection takeaways={data.takeaways_3} items={topItems} />
+
+	            <section>
+	              <div className="list-head">
+	                <h2>
+	                  Key News Signals (TOP {visibleItemCount})
+	                </h2>
+	                <div className="list-head-tools">
+		                  <span className="quota-badge" title="표시 개수 기준 해외 기사 최소 비율(33.33%)을 적용합니다.">
+		                    G {globalCountVisible}/{visibleItemCount} (min {requiredGlobalVisible}, Q+{quotaAddedIds.size})
+		                  </span>
+                    <span className="list-head-label">정렬</span>
+                    <div className="segment-group" role="group" aria-label="정렬">
+                      <button
+                        type="button"
+                        className={`segment-btn ${sortMode === 'time' ? 'segment-btn-active' : ''}`}
+                        onClick={() => setSortModePersist('time')}
+                      >
+                        시간순
+                      </button>
+                      <button
+                        type="button"
+                        className={`segment-btn ${sortMode === 'importance' ? 'segment-btn-active' : ''}`}
+                        onClick={() => setSortModePersist('importance')}
+                      >
+                        중요도순
+                      </button>
+                    </div>
+	                  <label htmlFor="signal-count" className="list-head-label">{DISPLAY_COUNT_LABEL}</label>
+	                  <select
+	                    id="signal-count"
+	                    className="signal-count-select"
+                    value={visibleItemCount}
+                    disabled={updatingCount}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      setVisibleItemCount(next);
+                      if (data.items.length < next) {
+                        ensureItemsForCount(next);
+                      }
+                    }}
+                  >
+                    {SIGNAL_COUNT_OPTIONS.map((count) => (
+                      <option key={count} value={count}>{count}</option>
+                    ))}
+                  </select>
+                  {updatingCount && <span className="list-head-label">불러오는 중...</span>}
+                </div>
+              </div>
+	              <NewsGrid items={sortedNews} quotaAddedIds={quotaAddedIds} />
+	            </section>
+	          </section>
+	        </div>
+	      </main>
+    </div>
+  );
+};
+
+export default App;

@@ -1,0 +1,15 @@
+node_modules/
+frontend/node_modules/
+.env
+*.log
+.backend.pid
+.frontend.pid
+data/*.db
+# frontend/dist/  <-- Commented out to allow deployment of inlined HTML
+*.apk
+artifacts/*.apk
+frontend/android/app/*.keystore
+frontend/android/keystore.properties
+.DS_Store
+.agent/
+# *.py           <-- Commented out to allow streamlit_app.py
