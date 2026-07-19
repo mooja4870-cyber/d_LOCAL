@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { AppMode, BriefData, NewsItem } from './types';
 import Header from './components/Header';
@@ -15,8 +15,8 @@ const INITIAL_ITEM_COUNT = 100;
 const PREFETCH_ITEM_COUNT = 100;
 const AUTO_UPDATE_INTERVAL_MS = 30 * 60 * 1000;
 const DISPLAY_COUNT_LABEL = '\uD45C\uC2DC \uAC1C\uC218';
-const API_BASE_STORAGE_KEY = 'vcbrief.api_base';
-const SORT_MODE_STORAGE_KEY = 'vcbrief.sort_mode';
+const API_BASE_STORAGE_KEY = 'd_local.api_base';
+const SORT_MODE_STORAGE_KEY = 'd_local.sort_mode';
 const MIN_GLOBAL_RATIO = 1 / 3;
 
 type SortMode = 'importance' | 'time';

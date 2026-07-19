@@ -1,5 +1,26 @@
 # Version History
 
+## v1.0.2
+
+Date: 2026-07-19
+
+### 변경 내용
+* Render 배포 설정(`render.yaml`, `DEPLOY_RENDER.md`) 및 주소 폐기, Streamlit Community Cloud 배포(`DEPLOY_STREAMLIT.md`)로 100% 전환
+* 프론트엔드(`frontend/.env.production`, `App.tsx`) 내 Render 기본 URL 및 기존 `vcbrief` 식별자 제거, `d_LOCAL` 및 Streamlit 앱 주소 반영 후 싱글 파일 재빌드 완료
+
+### 수정 파일
+* DEPLOY_STREAMLIT.md (신규)
+* frontend/.env.production
+* frontend/.env.production.example
+* frontend/src/App.tsx
+* frontend/dist/index.html
+* ver.md
+
+### 비고
+* Render 폐기 및 Streamlit Cloud 배포 체제 완벽 전환
+
+---
+
 ## v1.0.1
 
 Date: 2026-07-19
