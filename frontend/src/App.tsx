@@ -215,6 +215,10 @@ const App: React.FC = () => {
   }, [apiBase]);
 
   const fetchBrief = async (itemCount: number) => {
+    const injected = (window as any).__INJECTED_BRIEF_DATA__;
+    if (injected && !IS_NATIVE) {
+      return normalizeBrief(injected);
+    }
     const date = getTodayIsoDate();
     if (IS_NATIVE && !apiBase) {
       throw new Error('앱 설정에서 API Base URL을 입력해 주세요.');
@@ -222,15 +226,21 @@ const App: React.FC = () => {
     if (IS_NATIVE && isLoopbackApiBase(apiBase)) {
       throw new Error('실기기에서는 localhost API를 사용할 수 없습니다. API Base URL을 PC의 로컬 IP로 변경해 주세요.');
     }
-    const res = await fetch(
-      `${apiBase}/api/brief?date=${date}&mode=${FIXED_MODE}&level=${FIXED_LEVEL}&itemCount=${itemCount}`,
-      { cache: 'no-store' }
-    );
-    if (!res.ok) {
-      throw new Error('데이터를 불러오지 못했습니다.');
+    try {
+      const res = await fetch(
+        `${apiBase}/api/brief?date=${date}&mode=${FIXED_MODE}&level=${FIXED_LEVEL}&itemCount=${itemCount}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) {
+        if (injected) return normalizeBrief(injected);
+        throw new Error('데이터를 불러오지 못했습니다.');
+      }
+      const json = await res.json();
+      return normalizeBrief(json);
+    } catch (err) {
+      if (injected) return normalizeBrief(injected);
+      throw err;
     }
-    const json = await res.json();
-    return normalizeBrief(json);
   };
 
   const ensureItemsForCount = async (targetCount: number) => {

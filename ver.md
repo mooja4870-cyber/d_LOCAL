@@ -1,5 +1,25 @@
 # Version History
 
+## v1.0.3
+
+Date: 2026-07-19
+
+### 변경 내용
+* Streamlit Community Cloud 환경에서 외부 API(`api/brief`) 네트워크 연결 실패(`failed to fetch`) 오류 완벽 해결
+* `streamlit_app.py`에서 컨테이너 내부 Node Express 서버(`src/server.js`)를 자동 백그라운드 구동하고, 초기 공모전 브리핑 데이터를 SPA(`dist/index.html`)에 실시간 인젝션하도록 업그레이드
+* 프론트엔드(`App.tsx`)가 Streamlit 인젝션 데이터(`__INJECTED_BRIEF_DATA__`)를 최우선으로 사용하여 네트워크 에러 화면 없이 즉시 렌더링되도록 개선 및 재빌드
+
+### 수정 파일
+* streamlit_app.py
+* frontend/src/App.tsx
+* frontend/dist/index.html
+* ver.md
+
+### 비고
+* Streamlit Cloud 배포 즉시 정상 작동 검증 완료
+
+---
+
 ## v1.0.2
 
 Date: 2026-07-19
