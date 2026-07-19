@@ -1,5 +1,24 @@
 # Version History
 
+## v1.0.1
+
+Date: 2026-07-19
+
+### 변경 내용
+* 프로젝트 폴더명을 `d_airelatednews`에서 `d_LOCAL`로 변경
+* 내부 상태 문서, 타이틀, 설정 파일 내 식별자를 `(d_LOCAL)`로 일괄 수정 및 싱글 파일 재빌드 완료
+
+### 수정 파일
+* PROJECT_STATUS.md
+* frontend/index.html
+* streamlit_app.py
+* ver.md
+
+### 비고
+* 폴더명 변경 및 UI 타이틀 반영 완료
+
+---
+
 ## v1.0.0
 
 Date: 2026-07-19

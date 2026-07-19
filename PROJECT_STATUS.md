@@ -1,4 +1,4 @@
-# PROJECT STATUS - AI & 숏폼 공모전 브리핑 (d_airelatednews)
+# PROJECT STATUS - AI & 숏폼 공모전 브리핑 (d_LOCAL)
 
 ## 현재 프로젝트 상태 및 요약
 - **프로젝트 개요**: 지자체·공공기관 AI/숏폼 공모전, 홍보 공모, 지역 살아보기(체류) 지원사업 최신 공고 및 AI 뉴스 요약 웹 서비스

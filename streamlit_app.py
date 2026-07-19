@@ -9,7 +9,7 @@ import streamlit.components.v1 as components
 # Page Config - Premium Dark Theme
 # ================================================================
 st.set_page_config(
-    page_title="AI & 숏폼 공모전 브리핑 (d_airelatednews)",
+    page_title="AI & 숏폼 공모전 브리핑 (d_LOCAL)",
     page_icon="🏆",
     layout="wide",
     initial_sidebar_state="collapsed",
