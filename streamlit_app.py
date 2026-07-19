@@ -94,6 +94,14 @@ def fetch_brief_data_locally():
                 return json.loads(row[0])
         except Exception:
             pass
+
+    # 3. Fallback: Directly read from committed JSON snapshot (data/brief_snapshot.json)
+    snapshot_path = project_root / "data" / "brief_snapshot.json"
+    if snapshot_path.exists():
+        try:
+            return json.loads(snapshot_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
             
     return None
 

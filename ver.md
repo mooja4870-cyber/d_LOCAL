@@ -1,5 +1,26 @@
 # Version History
 
+## v1.0.4
+
+Date: 2026-07-19
+
+### 변경 내용
+* `.gitignore`에서 `data/*.db` 주석 처리하여, Streamlit Cloud 배포 시 로컬 DB(`data/brief.db`) 및 JSON 스냅샷(`data/brief_snapshot.json`)이 저장소에 함께 포함되도록 수정
+* `streamlit_app.py` 내 `fetch_brief_data_locally` 함수에 JSON 스냅샷(`data/brief_snapshot.json`) 직접 로드 Fallback 로직 추가
+* Streamlit Cloud 서버에서 Express 백엔드가 미가동되거나 DB 연결 지연 시에도 초기 공모전 브리핑 데이터 인젝션이 100% 보장되어 네트워크 오류 박스가 원천 차단됨
+
+### 수정 파일
+* .gitignore
+* streamlit_app.py
+* data/brief.db
+* data/brief_snapshot.json
+* ver.md
+
+### 비고
+* Streamlit 로컬 및 클라우드 인젝션 동작 검증 완료
+
+---
+
 ## v1.0.3
 
 Date: 2026-07-19

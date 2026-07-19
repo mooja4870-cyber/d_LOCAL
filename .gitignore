@@ -4,7 +4,7 @@ frontend/node_modules/
 *.log
 .backend.pid
 .frontend.pid
-data/*.db
+# data/*.db
 # frontend/dist/  <-- Commented out to allow deployment of inlined HTML
 *.apk
 artifacts/*.apk
