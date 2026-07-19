@@ -1,5 +1,28 @@
 # Version History
 
+## v1.1.0
+
+Date: 2026-07-19
+
+### 변경 내용
+* 수집 소스(`src/lib/sources.js`)에서 일반 AI 기술 동향 및 IT/테크 뉴스 RSS 소스를 일체 제거하고, 공모전(`웰촌`, `위비티`, `지자체·공공기관 AI/숏폼 공모전` 등) 및 지역 체류/살아보기 공고 소스만 유지하도록 전면 개편
+* 수집 및 분류 필터(`src/jobs/refresh.js`)의 키워드 판별 로직(`VC_SIGNAL_KEYWORDS`, `CONTEST_STAY_KEYWORDS`, `deriveTheme`, `isVcRelevantRaw`)을 고도화하여 일반 AI 기술/도구 게시물이 완전히 차단되고 오직 공모전 및 체류 지원사업 게시물만 분류되도록 개선
+* DB(`data/brief.db`) 및 JSON 스냅샷(`data/brief_snapshot.json`) 내 기존 일반 뉴스/기술 정보 게시물 데이터 삭제 및 재적재 수행
+* 프론트엔드 번들(`frontend/dist`) 최신 갱신 및 Streamlit 인젝션 동작 3중 검증 완료
+
+### 수정 파일
+* src/lib/sources.js
+* src/jobs/refresh.js
+* data/brief.db
+* data/brief_snapshot.json
+* frontend/dist/index.html
+* ver.md
+
+### 비고
+* 단일 작업 후 3중 자체 검증 (파일 저장, UI 렌더링/인젝션, 백엔드 로그) 완수
+
+---
+
 ## v1.0.4
 
 Date: 2026-07-19

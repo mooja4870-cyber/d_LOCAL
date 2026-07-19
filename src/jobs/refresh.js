@@ -115,12 +115,17 @@ const FINAL_MAX_BY_SOURCE = {
 const THEME_MIN = { 'AI 숏폼·영상 공모전': 1 };
 const THEME_MAX = { '기타/산업 일반': 3 };
 const VC_SIGNAL_KEYWORDS = [
-  'ai', '인공지능', 'llm', 'gemini', 'chatgpt', 'openai', '생성형',
   '숏폼', 'short-form', '영상', '동영상', '릴스', '쇼츠', '유튜브',
   '공모', '공모전', '홍보', '경진대회', '챌린지', '도전', '출품', '시상', '지원금', '상금',
   '지자체', '공공기관', '시청', '도청', '군청', '구청', '재단', '관광',
   '살아보기', '한달살기', '촌캉스', '체류', '귀농', '청년', '창업지원',
   'contest', 'challenge', 'competition', 'grant', 'video', 'creator',
+];
+const CONTEST_STAY_KEYWORDS = [
+  '숏폼', 'short-form', '영상', '동영상', '릴스', '쇼츠', '유튜브',
+  '공모', '공모전', '홍보', '경진대회', '챌린지', '도전', '출품', '시상', '지원금', '상금',
+  '살아보기', '한달살기', '촌캉스', '체류', '귀농',
+  'contest', 'challenge', 'competition', 'grant', 'film festival',
 ];
 const NON_VC_TITLE_PATTERNS = [
   /\[(?:현장한컷|뉴스핫픽|사건현장)\]/i,
@@ -215,7 +220,6 @@ function deriveTheme(tags) {
   if (tags.includes('AI_ShortForm') || (tags.includes('AI_Tech') && tags.includes('Public_Contest'))) return 'AI 숏폼·영상 공모전';
   if (tags.includes('Public_Contest') || tags.includes('Gov_Agency')) return '지자체·공공기관 홍보 공모';
   if (tags.includes('Regional_Stay')) return '지역 체류·살아보기 지원';
-  if (tags.includes('AI_Tech')) return 'AI 기술·생성형 도구 동향';
   return '일반 공모·지원사업';
 }
 
@@ -234,11 +238,9 @@ function isVcRelevantRaw(raw) {
   if (isClearlyNonVcTitle(title)) return false;
 
   const haystack = `${title}\n${summary}`.toLowerCase();
-  if (containsAnyKeyword(haystack, VC_SIGNAL_KEYWORDS)) return true;
+  if (!containsAnyKeyword(haystack, CONTEST_STAY_KEYWORDS)) return false;
 
-  const tags = deriveTags(title);
-  const isGeneralOnly = tags.length === 1 && tags[0] === 'General';
-  return !isGeneralOnly;
+  return true;
 }
 
 function computeScore(breakdown) {
@@ -278,9 +280,9 @@ function computeSelectionScore(item, mode, level) {
     addIfTheme('지자체·공공기관 홍보 공모', 6);
   } else {
     addIfTag('AI_ShortForm', 5);
-    addIfTag('AI_Tech', 5);
+    addIfTag('Public_Contest', 5);
     addIfTheme('AI 숏폼·영상 공모전', 4);
-    addIfTheme('AI 기술·생성형 도구 동향', 3);
+    addIfTheme('지자체·공공기관 홍보 공모', 3);
   }
 
   return score;

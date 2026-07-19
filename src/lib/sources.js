@@ -12,14 +12,6 @@ const RSS_SOURCES = [
   { name: '위비티 (Wevity) 영상/AI/공공 공모전', url: googleNewsRss('site:wevity.com ("AI" OR "영상" OR "숏폼" OR "공모전")'), region: 'domestic' },
   { name: '지자체·공공기관 AI/숏폼 공모전', url: googleNewsRss('"AI 영상 공모전" OR "숏폼 공모전" OR "영상 콘텐츠 공모전"'), region: 'domestic' },
   { name: '지자체 홍보·체류(살아보기) 지원사업', url: googleNewsRss('"한달살기" OR "촌캉스" OR "살아보기" OR "지역체류" 공모'), region: 'domestic' },
-  { name: 'AI 최신 동향 및 생성형 도구 뉴스', url: googleNewsRss('"생성형 AI" OR "OpenAI" OR "Gemini" OR "AI 모델" 출시 OR 활용'), region: 'domestic' },
-  { name: '전자신문 AI/IT', url: 'https://rss.etnews.com/Section901.xml', region: 'domestic' },
-  { name: '지디넷코리아 AI/SW', url: 'https://feeds.feedburner.com/zdkorea', region: 'domestic' },
-  { name: '블로터 AI/테크', url: 'https://cdn.bloter.net/rss/gns_allArticle.xml', region: 'domestic' },
-  { name: 'TechCrunch AI & Video', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', region: 'global' },
-  { name: 'VentureBeat AI News', url: 'https://venturebeat.com/category/ai/feed/', region: 'global' },
-  { name: 'The Verge AI', url: googleNewsRss('site:theverge.com "AI" OR "video" OR "generator"', { lang: 'en', country: 'US' }), region: 'global' },
-  { name: 'Product Hunt AI & Video Tools', url: 'https://www.producthunt.com/feed', region: 'global' },
   { name: 'Global AI & Video Contests', url: googleNewsRss('"AI video contest" OR "short-form challenge" OR "AI film festival"', { lang: 'en', country: 'US' }), region: 'global' },
 ];
 
