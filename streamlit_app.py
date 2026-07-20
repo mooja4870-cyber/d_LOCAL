@@ -55,6 +55,54 @@ def start_backend_server():
 
 start_backend_server()
 
+REQUIRED_BENEFIT_CONTEST_KEYWORDS = [
+    '공모', '공모전', '경진대회', '챌린지', '도전', '출품', '시상', '상금', '시상금', 
+    '지원금', '살아보기', '한달살기', '촌캉스', '체류', '숙박지원', '거주지원', '귀농', 
+    '청년지원', '창업지원', 'contest', 'challenge', 'competition', 'grant', 'hackathon', '해커톤'
+]
+
+EXCLUDED_RESULT_CLOSED_KEYWORDS = [
+    '최우수상', '우수상', '대상 수상', '장려상', '수상작 발표', '수상자 발표', '결과발표', 
+    '결과 발표', '선정 결과', '선정결과', '최종 선정', '최종선정', '시상식 개최', '성료', 
+    '폐막', '모집종료', '모집 종료', '접수마감', '접수 마감', '당선작', '아티스트 선정', '수상…', '수상:'
+]
+
+def is_strictly_active_contest_or_benefit_py(item):
+    if not item or not isinstance(item, dict):
+        return False
+    title = str(item.get("title") or item.get("title_original") or "").strip()
+    summary_lines = item.get("summary_3lines")
+    if isinstance(summary_lines, list):
+        summary = " ".join([str(l) for l in summary_lines])
+    else:
+        summary = str(item.get("summary") or "")
+    if not title:
+        return False
+    
+    full_text = f"{title}\n{summary}"
+    lower_text = full_text.lower()
+    
+    for closed_kw in EXCLUDED_RESULT_CLOSED_KEYWORDS:
+        if closed_kw in full_text:
+            return False
+            
+    if (re.search(r'\b202[0-5]년\b', full_text) or re.search(r'\b202[0-5]\.\s*\d{1,2}\b', full_text)) and not (re.search(r'\b202[6-9]년\b', full_text) or re.search(r'\b202[6-9]\.', full_text)):
+        return False
+        
+    has_benefit = any(kw.lower() in lower_text for kw in REQUIRED_BENEFIT_CONTEST_KEYWORDS)
+    if not has_benefit:
+        return False
+        
+    return True
+
+def apply_py_filter(brief_data):
+    if not brief_data or not isinstance(brief_data, dict):
+        return brief_data
+    items = brief_data.get("items")
+    if isinstance(items, list):
+        brief_data["items"] = [item for item in items if is_strictly_active_contest_or_benefit_py(item)]
+    return brief_data
+
 # ================================================================
 # Data Loading & Injection for Streamlit Cloud (No External API required)
 # ================================================================
@@ -68,7 +116,7 @@ def fetch_brief_data_locally():
         req = urllib.request.urlopen(url, timeout=3)
         if req.status == 200:
             data_str = req.read().decode('utf-8')
-            return json.loads(data_str)
+            return apply_py_filter(json.loads(data_str))
     except Exception:
         pass
 
@@ -91,7 +139,7 @@ def fetch_brief_data_locally():
                 row = cursor.fetchone()
             conn.close()
             if row and row[0]:
-                return json.loads(row[0])
+                return apply_py_filter(json.loads(row[0]))
         except Exception:
             pass
 
@@ -99,7 +147,7 @@ def fetch_brief_data_locally():
     snapshot_path = project_root / "data" / "brief_snapshot.json"
     if snapshot_path.exists():
         try:
-            return json.loads(snapshot_path.read_text(encoding="utf-8"))
+            return apply_py_filter(json.loads(snapshot_path.read_text(encoding="utf-8")))
         except Exception:
             pass
             

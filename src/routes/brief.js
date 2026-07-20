@@ -1,6 +1,7 @@
-﻿const express = require('express');
+const express = require('express');
 const { get } = require('../db/sqlite');
 const { normalizeParams, refreshBrief } = require('../jobs/refresh');
+const { isStrictlyActiveContestOrBenefit } = require('../lib/contestFilter');
 
 function emptyBrief({ date, mode, level }) {
   return {
@@ -15,7 +16,7 @@ function emptyBrief({ date, mode, level }) {
 }
 
 function applyGlobalQuota(items, itemCount, ratio = 1 / 3) {
-  const all = Array.isArray(items) ? items : [];
+  const all = Array.isArray(items) ? items.filter(isStrictlyActiveContestOrBenefit) : [];
   // Enforce "score_total-first" ordering regardless of how the brief was stored.
   const sorted = [...all].sort((a, b) => Number(b?.score_total || 0) - Number(a?.score_total || 0));
 

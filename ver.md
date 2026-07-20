@@ -1,5 +1,31 @@
 # Version History
 
+## v1.2.0
+
+Date: 2026-07-20
+
+### 변경 내용
+* 시상금·체류 지원 등 실질적 혜택이 없고 마감/완료된 사안을 원천 차단하는 핵심 필터 모듈(`src/lib/contestFilter.js`) 신규 개발 및 3중 관문 적용
+* 공모전 수상자 발표, 최우수상 선정, 시상식 성료 등 이미 종료된 사안(`EXCLUDED_RESULT_CLOSED_KEYWORDS` 및 과거 연도 패턴) 자동 필터링 차단
+* 단순 AI 기술 뉴스 차단 및 공모전·상금·체류·살아보기·경진대회 등 실질 혜택(`REQUIRED_BENEFIT_CONTEST_KEYWORDS`) 필수 포함 규정 의무화
+* 수집 엔진(`src/jobs/refresh.js`), API 라우터(`src/routes/brief.js`), Streamlit 클라이언트(`streamlit_app.py`) 이 3중 레이어에 엄격 필터 동시 장착
+* 데이터베이스(`data/brief.db`) 및 로컬 스냅샷(`data/brief_snapshot.json`) 내 완료/불량 데이터(121건) 일괄 정제 수행 (`src/scripts/clean_expired.js`)
+
+### 수정 파일
+* src/lib/contestFilter.js (신규)
+* src/scripts/clean_expired.js (신규)
+* src/jobs/refresh.js
+* src/routes/brief.js
+* streamlit_app.py
+* data/brief_snapshot.json
+* data/brief.db
+* ver.md
+
+### 비고
+* 단일 작업 후 3중 자체 검증 완수 (파일 저장, 데이터 정제 및 UI 인젝션, 백엔드 필터링 동작 확인)
+
+---
+
 ## v1.1.0
 
 Date: 2026-07-19

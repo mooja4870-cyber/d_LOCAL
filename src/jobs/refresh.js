@@ -13,6 +13,7 @@ const {
   makeSummaryLines,
 } = require('../lib/articleExtract');
 const { translateToKo } = require('../lib/translate');
+const { isStrictlyActiveContestOrBenefit } = require('../lib/contestFilter');
 
 function normalizeLevel(level) {
   if (!level) return '3_5';
@@ -239,6 +240,9 @@ function isVcRelevantRaw(raw) {
 
   const haystack = `${title}\n${summary}`.toLowerCase();
   if (!containsAnyKeyword(haystack, CONTEST_STAY_KEYWORDS)) return false;
+
+  // Strict benefit and active deadline/status check
+  if (!isStrictlyActiveContestOrBenefit(raw)) return false;
 
   return true;
 }
