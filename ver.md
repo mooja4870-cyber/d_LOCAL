@@ -1,5 +1,22 @@
 # Version History
 
+## v1.3.0
+
+Date: 2026-07-20
+
+### 변경 내용
+* 구글 뉴스 RSS 수집 한계 극복을 위한 **맞춤형 웹 크롤링 파이프라인 신규 구축**
+* 한달살러(`monthler.kr`), 위비티(`wevity.com`) 직접 스크래핑 엔진 연동 (`src/lib/crawlers`)
+* RSS와 크롤링 데이터를 병합하여 단일 3중 필터(`contestFilter.js`)를 통과하도록 구조 확장
+
+### 수정 파일
+* package.json (cheerio 의존성 추가)
+* src/lib/crawlers/index.js, monthler.js, wevity.js (신규 생성)
+* src/jobs/refresh.js
+
+### 비고
+* 로컬 렌더링 및 데이터 인입 테스트 완료
+
 ## v1.2.1
 
 Date: 2026-07-20

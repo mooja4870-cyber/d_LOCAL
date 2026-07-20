@@ -2,6 +2,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { run, get } = require('../db/sqlite');
 const { RSS_SOURCES, fetchRss } = require('../lib/sources');
+const { fetchAllCrawlers } = require('../lib/crawlers');
 const {
   resolveFinalUrl,
   extractCanonical,
@@ -881,6 +882,14 @@ async function refreshBrief(params, db) {
       .filter(i => isWithinHours(i.published_at, MAX_AGE_HOURS))
       .slice(0, perSourceLimit);
     rawArticles.push(...recent);
+  }
+
+  // --- Run Custom Crawlers (Monthler, Wevity, etc.) ---
+  try {
+    const crawlerItems = await fetchAllCrawlers();
+    rawArticles.push(...crawlerItems);
+  } catch (err) {
+    console.error('Failed to run custom crawlers:', err.message);
   }
 
   const candidates = rawArticles
