@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { run, get } = require('../db/sqlite');
 const { RSS_SOURCES, fetchRss } = require('../lib/sources');
 const { fetchAllCrawlers } = require('../lib/crawlers');
+const { fetchNaverSearch } = require('../lib/search/naver');
 const {
   resolveFinalUrl,
   extractCanonical,
@@ -890,6 +891,14 @@ async function refreshBrief(params, db) {
     rawArticles.push(...crawlerItems);
   } catch (err) {
     console.error('Failed to run custom crawlers:', err.message);
+  }
+
+  // --- Run Naver Search API ---
+  try {
+    const naverItems = await fetchNaverSearch();
+    rawArticles.push(...naverItems);
+  } catch (err) {
+    console.error('Failed to run Naver Search API:', err.message);
   }
 
   const candidates = rawArticles
