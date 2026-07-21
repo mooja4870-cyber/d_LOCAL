@@ -4,6 +4,7 @@ const { run, get } = require('../db/sqlite');
 const { RSS_SOURCES, fetchRss } = require('../lib/sources');
 const { fetchAllCrawlers } = require('../lib/crawlers');
 const { fetchNaverSearch } = require('../lib/search/naver');
+const { fetchGoogleSearch } = require('../lib/search/google');
 const {
   resolveFinalUrl,
   extractCanonical,
@@ -899,6 +900,14 @@ async function refreshBrief(params, db) {
     rawArticles.push(...naverItems);
   } catch (err) {
     console.error('Failed to run Naver Search API:', err.message);
+  }
+
+  // --- Run Google Search API ---
+  try {
+    const googleItems = await fetchGoogleSearch();
+    rawArticles.push(...googleItems);
+  } catch (err) {
+    console.error('Failed to run Google Search API:', err.message);
   }
 
   const candidates = rawArticles
