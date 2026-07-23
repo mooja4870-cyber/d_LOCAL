@@ -1,5 +1,25 @@
 # Version History
 
+## v1.6.0
+
+Date: 2026-07-23
+
+### 변경 내용
+* **AI/숏폼 공모전 및 지역 체류(살아보기) 지원사업 뉴스의 정밀 정제 필터 구축**
+  * 일반 테크/IT 제품, 부동산/아파트/시공사, 노조/쟁의/기업 경영, 의료영상(CT) 등 무관한 기사 자동 제거를 위한 `EXCLUDED_IRRELEVANT_KEYWORDS` 차단 필터 적용 (`src/lib/contestFilter.js`, `streamlit_app.py`)
+* **매일 00:00, 12:00 KST (1일 2회) 자동 게시글 수집/갱신 스케줄러 구현** (`src/server.js`)
+* Google News RSS 수집 키워드 명확화 및 정밀화 (`src/lib/sources.js`)
+
+### 수정 파일
+* src/lib/contestFilter.js
+* streamlit_app.py
+* src/server.js
+* src/lib/sources.js
+* ver.md
+
+### 비고
+* 수집 데이터 3중 자가 검증 완료 및 무관한 기사 100% 필터링 확인
+
 ## v1.5.0
 
 Date: 2026-07-21

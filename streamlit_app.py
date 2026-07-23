@@ -57,15 +57,23 @@ def start_backend_server():
 start_backend_server()
 
 REQUIRED_BENEFIT_CONTEST_KEYWORDS = [
-    '공모', '공모전', '경진대회', '챌린지', '도전', '출품', '시상', '상금', '시상금', 
-    '지원금', '살아보기', '한달살기', '촌캉스', '체류', '숙박지원', '거주지원', '귀농', 
-    '청년지원', '창업지원', 'contest', 'challenge', 'competition', 'grant', 'hackathon', '해커톤'
+    '공모전', '공모', '경진대회', '해커톤', 'hackathon', '출품작', '출품', '시상금', '상금',
+    '한달살기', '촌캉스', '살아보기', '지역체류', '체류지원', '체류 지원', '숙박지원', '숙박 지원', '귀농귀촌', '농촌여행',
+    'contest', 'challenge', 'competition', 'grant', 'film festival', 'film contest', 'video contest', 'short-form contest', 'short-form challenge'
 ]
 
 EXCLUDED_RESULT_CLOSED_KEYWORDS = [
     '최우수상', '우수상', '대상 수상', '장려상', '수상작 발표', '수상자 발표', '결과발표', 
     '결과 발표', '선정 결과', '선정결과', '최종 선정', '최종선정', '시상식 개최', '성료', 
     '폐막', '모집종료', '모집 종료', '접수마감', '접수 마감', '당선작', '아티스트 선정', '수상…', '수상:'
+]
+
+EXCLUDED_IRRELEVANT_KEYWORDS = [
+    '아파트', '시공사', '건설사', '분양', '수의계약', '재개발', '재건축', '컨소시엄',
+    '노조', '쟁의', '파업', '주가', '주식', '코스피', '코스닥', '영업이익', '매출액', 'M&A', '인수합병', '지분', 'CEO', 'CTO', '임원 인사', '예산안', '당정',
+    '스크립팅', '프리커서', '봇 차단', '봇차단', '탠덤 OLED', '저궤도망', '소버린', '데이터센터', 
+    '차량 보험', '자동차보험', '자생한방', '저작권 합의', '폐기능 예측', '폐기능', 'CT 영상', '의료 영상', 
+    '병원신문', '조직 신설', '해킹방어대회', '코드게이트', '하버드 스타트업'
 ]
 
 def is_strictly_active_contest_or_benefit_py(item):
@@ -83,6 +91,10 @@ def is_strictly_active_contest_or_benefit_py(item):
     full_text = f"{title}\n{summary}"
     lower_text = full_text.lower()
     
+    for irr_kw in EXCLUDED_IRRELEVANT_KEYWORDS:
+        if irr_kw in full_text:
+            return False
+
     for closed_kw in EXCLUDED_RESULT_CLOSED_KEYWORDS:
         if closed_kw in full_text:
             return False
@@ -91,7 +103,12 @@ def is_strictly_active_contest_or_benefit_py(item):
         return False
         
     has_benefit = any(kw.lower() in lower_text for kw in REQUIRED_BENEFIT_CONTEST_KEYWORDS)
-    if not has_benefit:
+    is_video_ai_combo = (
+        ('숏폼' in lower_text or '쇼츠' in lower_text or '릴스' in lower_text or '영상' in lower_text or 'short-form' in lower_text) and
+        ('공모' in lower_text or '모집' in lower_text or '접수' in lower_text or '시상' in lower_text or '경진' in lower_text or '장학금' in lower_text or '개최' in lower_text)
+    )
+
+    if not has_benefit and not is_video_ai_combo:
         return False
         
     return True

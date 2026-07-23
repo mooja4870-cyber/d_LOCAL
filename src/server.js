@@ -193,6 +193,29 @@ function startAutoRefresh(db) {
   };
 
   runAutoRefresh('startup');
+
+  // Daily schedule at 00:00 KST and 12:00 KST
+  let lastTriggeredSlot = '';
+  const dailySchedulerTimer = setInterval(() => {
+    const now = new Date();
+    const kstTime = now.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Seoul',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    if ((kstTime === '00:00' || kstTime === '12:00') && lastTriggeredSlot !== kstTime) {
+      lastTriggeredSlot = kstTime;
+      runAutoRefresh(`scheduled_${kstTime.replace(':', '')}_kst`);
+    } else if (kstTime !== '00:00' && kstTime !== '12:00') {
+      lastTriggeredSlot = '';
+    }
+  }, 30_000);
+
+  if (typeof dailySchedulerTimer.unref === 'function') {
+    dailySchedulerTimer.unref();
+  }
+
   const timer = setInterval(() => {
     runAutoRefresh('interval');
   }, AUTO_REFRESH_INTERVAL_MS);
@@ -202,7 +225,11 @@ function startAutoRefresh(db) {
   }
 
   return {
-    getStatus: () => ({ ...last, interval_ms: AUTO_REFRESH_INTERVAL_MS }),
+    getStatus: () => ({ 
+      ...last, 
+      interval_ms: AUTO_REFRESH_INTERVAL_MS,
+      daily_schedule: '00:00, 12:00 KST'
+    }),
   };
 }
 

@@ -1,21 +1,25 @@
 const { refreshBrief } = require('./src/jobs/refresh');
-const sqlite3 = require('sqlite3').verbose();
+const { openDb } = require('./src/db/sqlite');
+const { initSchema } = require('./src/db/init');
 const path = require('path');
 
 const dbPath = path.resolve(__dirname, 'data/brief.db');
-const db = new sqlite3.Database(dbPath);
 
 async function run() {
   console.log('Testing refreshBrief...');
+  let db;
   try {
+    db = await openDb(dbPath);
+    await initSchema(db);
     const today = new Date().toISOString().split('T')[0];
-    await refreshBrief({ date: today, itemCount: 15 }, db);
-    console.log('Done!');
+    const result = await refreshBrief({ date: today, itemCount: 15 }, db);
+    console.log('Refresh result:', JSON.stringify(result, null, 2));
   } catch(e) {
     console.error('Error:', e);
   } finally {
-    db.close();
+    if (db) await db.close();
   }
 }
 
 run();
+
