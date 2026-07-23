@@ -8,11 +8,15 @@ function googleNewsRss(query, options = {}) {
 }
 
 const RSS_SOURCES = [
-  { name: '웰촌 (Welchon) 공모전·이벤트', url: googleNewsRss('site:welchon.com OR "웰촌"'), region: 'domestic' },
+  { name: '마실 (Masil) 지자체 체류·지원금 모음', url: googleNewsRss('site:masil.io OR "마실" ("살아보기" OR "지원금" OR "체류")'), region: 'domestic' },
+  { name: '그린대로 (Greendaero) 농촌에서 살아보기', url: googleNewsRss('site:greendaero.go.kr OR "농촌에서 살아보기" OR "그린대로"'), region: 'domestic' },
+  { name: '온통청년 (YouthCenter) 지역살이 지원사업', url: googleNewsRss('site:youthcenter.go.kr ("한달살기" OR "지역살이" OR "청년지원")'), region: 'domestic' },
   { name: '위비티 (Wevity) 영상/AI/공공 공모전', url: googleNewsRss('site:wevity.com ("AI" OR "영상" OR "숏폼" OR "공모전")'), region: 'domestic' },
+  { name: '웰촌 (Welchon) 촌캉스·농촌체험', url: googleNewsRss('site:welchon.com OR "웰촌" ("촌캉스" OR "농촌체험" OR "공모")'), region: 'domestic' },
+  { name: '시골투어 (Sigoltour) 로컬 체류 패키지', url: googleNewsRss('site:sigoltour.com OR "시골투어" ("시골" OR "체류" OR "체험")'), region: 'domestic' },
   { name: '지자체·공공기관 AI/숏폼 공모전', url: googleNewsRss('"AI 영상 공모전" OR "숏폼 공모전" OR "영상 콘텐츠 공모전"'), region: 'domestic' },
   { name: '지자체 홍보·체류(살아보기) 지원사업', url: googleNewsRss('"한달살기" OR "촌캉스" OR "살아보기" OR "지역체류" 공모'), region: 'domestic' },
-  { name: 'Global AI & Video Contests', url: googleNewsRss('"AI video contest" OR "short-form challenge" OR "AI film festival"', { lang: 'en', country: 'US' }), region: 'global' },
+  { name: 'Global AI & Video Contests', url: googleNewsRss('"AI video contest" OR "short-form contest" OR "AI film festival"', { lang: 'en', country: 'US' }), region: 'global' },
 ];
 
 function decodeHtml(str) {

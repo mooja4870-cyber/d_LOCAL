@@ -1,5 +1,20 @@
 # Version History
 
+## v1.7.0
+
+Date: 2026-07-23
+
+### 변경 내용
+* **지자체 체류·살아보기 및 공모전 6대 주요 전문 플랫폼 수집 채널 대폭 확장**
+  * 마실(masil.io), 그린대로(greendaero.go.kr), 온통청년(youthcenter.go.kr), 위비티(wevity.com), 웰촌(welchon.com), 시골투어(sigoltour.com) 타겟 쿼리 및 전용 소스 인입 파이프라인 연동 (`src/lib/sources.js`)
+
+### 수정 파일
+* src/lib/sources.js
+* ver.md
+
+### 비고
+* 신규 6대 출처 공고 자동 인입 및 3중 필터링 렌더링 검증 완료
+
 ## v1.6.0
 
 Date: 2026-07-23
